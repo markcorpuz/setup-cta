@@ -6,34 +6,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 
-add_filter( 'block_categories', 'setup_cta_block_cats_fn', 10, 2 );
-function setup_cta_block_cats_fn( $categories ) {
+/**
+ * Add a block category for "Setup" if it doesn't exist already.
+ *
+ * @ param array $categories Array of block categories.
+ *
+ * @ return array
+ */
+add_filter( 'block_categories', 'setup_block_categories_fn_2' );
+function setup_block_categories_fn_2( $categories ) {
 
-    foreach( $categories as $key => $value) {
-    	
-    	if( in_array( 'setup', $value) ) {
-    		$foundit = TRUE;
-    		break;
-    	}
+    $category_slugs = wp_list_pluck( $categories, 'slug' );
 
-    }
+    return in_array( 'setup', $category_slugs, TRUE ) ? $categories : array_merge(
+        array(
+            array(
+                'slug'  => 'setup',
+                'title' => __( 'Setup', 'mydomain' ),
+                'icon'  => null,
+            ),
+        ),
+        $categories
+    );
 
-    // category not found - add new
-    if( $foundit === FALSE ) {
-
-	    return array_merge(
-	        array(
-	            array(
-	                'slug' => 'setup',
-	                'title' => __( 'Setup', 'mydomain' ),
-	                //'icon'  => 'wordpress',
-	            ),
-	        ),
-	        $categories
-	    );
-
-    }
 }
+
 
 /**
  * Register Custom Blocks
@@ -67,19 +64,9 @@ function setup_cta_block_acf_init_fn() {
         return;
     }
     
-    // this loop is broken, how do we register multiple blocks in one go?
-    // Register all available blocks.
-/*    $user = wp_get_current_user();
-
-    $allowed_roles = array( 'administrator' ); // can also be array( 'editor', 'administrator', 'author' );
-
-    if( array_intersect( $allowed_roles, $user->roles ) ) {
-*/
-        foreach( $blocks as $block ) {
-            acf_register_block_type( $block );
-        }
-
-//    }
+	foreach( $blocks as $block ) {
+		acf_register_block_type( $block );
+	}
   
 }
 
@@ -90,22 +77,13 @@ function setup_cta_block_acf_init_fn() {
  */
 add_filter( 'acf/load_field/name=cta_layout', 'setup_cta_view_list_fn' );
 function setup_cta_view_list_fn( $field ) {
-    
+
     // get all files found in VIEWS folder
     $view_dir = plugin_dir_path( __FILE__ ).'partials/views/';
-/*    $files = scandir($path);
-    $choices = array_diff(scandir($path), array('.', '..'));
-    var_dump($choices);
-  */
 
     $data_from_database = setup_pull_view_files( $view_dir );
 
-    //Change this to whatever data you are using.
-    /*$data_from_database = array(
-        'key1' => 'value1',
-        'key2' => 'value2'
-    );*/
-
+    // set array
     $field['choices'] = array();
 
     //Loop through whatever data you are using, and assign a key/value
@@ -123,7 +101,7 @@ function setup_cta_view_list_fn( $field ) {
 
 
 /**
- * Auto fill LAYOUT Select options
+ * Auto fill BUTTON Select options
  *
  */
 add_filter( 'acf/load_field/name=cta_button', 'setup_cta_btn_list_fn' );
@@ -131,19 +109,10 @@ function setup_cta_btn_list_fn( $field ) {
     
     // get all files found in VIEWS folder
     $view_dir = plugin_dir_path( __FILE__ ).'partials/images/';
-/*    $files = scandir($path);
-    $choices = array_diff(scandir($path), array('.', '..'));
-    var_dump($choices);
-  */
 
     $data_from_database = setup_pull_view_files( $view_dir );
 
-    //Change this to whatever data you are using.
-    /*$data_from_database = array(
-        'key1' => 'value1',
-        'key2' => 'value2'
-    );*/
-
+    // set array
     $field['choices'] = array();
 
     //Loop through whatever data you are using, and assign a key/value
@@ -165,21 +134,9 @@ function setup_cta_btn_list_fn( $field ) {
  */
 if( !function_exists( 'setup_acfx_pull_view_template' ) ) {
 
-	function setup_acfx_pull_view_template( $layout, $args = FALSE ) {
+	function setup_acfx_pull_view_template( $layout ) {
 
 	    $layout_file = plugin_dir_path( __FILE__ ).'partials/views/'.$layout;
-	    
-	    if( $args ) {
-
-	        if( array_key_exists( 'id', $args ) ) {
-
-	            global $pid;
-
-	            $pid = $args[ 'id' ];
-
-	        }
-	        
-	    }
 	    
 	    if( is_file( $layout_file ) ) {
 
@@ -202,4 +159,36 @@ if( !function_exists( 'setup_acfx_pull_view_template' ) ) {
 
 	}
 
+}
+
+
+// #####################################################################################################################
+// get all files in the INC folder to be used for including the said files
+// but get rid of the dots that scandir() picks up in Linux environments
+if( !function_exists( 'setup_pull_view_files' ) ) {
+
+    function setup_pull_view_files( $directory ) {
+
+        $out = array();
+        
+        // get all files inside the directory but remove unnecessary directories
+        $ss_plug_dir = array_diff( scandir( $directory ), array( '..', '.' ) );
+        
+        foreach ($ss_plug_dir as $value) {
+            
+            // combine directory and filename
+            $file = basename( $directory.$value, ".php" );
+
+            // filter files to include
+            if( $file ) {
+                $out[ $value ] = $file;
+            }
+
+        }
+
+        // Return an array of files (without the directory)
+        return $out;
+
+    }
+    
 }

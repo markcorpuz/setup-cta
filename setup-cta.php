@@ -20,6 +20,7 @@ function setup_cta_acf_fn() {
 }
 
 
+// this function can be used by files inside the VIEW folder to get the accurate location of this plugin
 function setup_cta_this_dir() {
 	return plugin_dir_url( __FILE__ );
 }
