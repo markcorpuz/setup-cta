@@ -13,8 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @ return array
  */
-add_filter( 'block_categories', 'setup_block_categories_fn_2' );
-function setup_block_categories_fn_2( $categories ) {
+add_filter( 'block_categories', 'setup_block_categories_fn_acf' );
+function setup_block_categories_fn_acf( $categories ) {
 
     $category_slugs = wp_list_pluck( $categories, 'slug' );
 
@@ -162,9 +162,7 @@ if( !function_exists( 'setup_acfx_pull_view_template' ) ) {
 }
 
 
-// #####################################################################################################################
-// get all files in the INC folder to be used for including the said files
-// but get rid of the dots that scandir() picks up in Linux environments
+// pull all files found in $directory but get rid of the dots that scandir() picks up in Linux environments
 if( !function_exists( 'setup_pull_view_files' ) ) {
 
     function setup_pull_view_files( $directory ) {
